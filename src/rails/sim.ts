@@ -76,6 +76,11 @@ export class SimRails implements Rails {
     return fakeHash();
   }
 
+  /** Any address's simulated balance, in base units. */
+  balanceOf(addr: Address, token: "cngn" | "usdt"): bigint {
+    return this.bal(addr, token);
+  }
+
   // ---- balances
   private bal(addr: Address, token: "cngn" | "usdt"): bigint {
     return BigInt(this.ledger.get(`sim.bal.${addr}.${token}`) ?? "0");
