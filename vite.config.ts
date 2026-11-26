@@ -20,16 +20,9 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: true,
+    // No manual vendor chunks: routes, the pay flow (wallet stack) and the
+    // landing simulator (charts) are lazy imports, so each page downloads only
+    // what it renders.
     chunkSizeWarningLimit: 900,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react: ["react", "react-dom", "react-router"],
-          wallet: ["wagmi", "viem"],
-          charts: ["recharts"],
-          motion: ["motion"],
-        },
-      },
-    },
   },
 });

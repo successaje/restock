@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import * as D from "@radix-ui/react-dialog";
@@ -29,7 +29,8 @@ import { BuiltOnCelo, Logo, LogoMark } from "@/components/brand/Logo";
 import { Github } from "@/components/brand/GithubIcon";
 import { buttonVariants } from "@/components/ui/button";
 import { HeroFlow } from "@/components/landing/HeroFlow";
-import { DevaluationSim } from "@/components/landing/DevaluationSim";
+// The simulator pulls in the charting library; load it after first paint.
+const DevaluationSim = lazy(() => import("@/components/landing/DevaluationSim").then((m) => ({ default: m.DevaluationSim })));
 import { KitGlyph } from "@/components/illustrations/Kit";
 
 const GITHUB = "https://github.com/successaje/restock";
@@ -317,7 +318,9 @@ function Problem({ r }: { r: number }) {
       }
     >
       <Reveal>
-        <DevaluationSim rate={r} />
+        <Suspense fallback={<div className="skeleton h-[560px] rounded-[28px]" />}>
+          <DevaluationSim rate={r} />
+        </Suspense>
       </Reveal>
       <Reveal delay={0.1}>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
