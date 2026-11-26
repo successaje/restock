@@ -22,7 +22,10 @@ export type PayInfo = {
   feeCurrency: `0x${string}`;
   attributionCode: string;
   attributionSuffix: `0x${string}`;
-  customer: (Customer & { installmentNgn: number }) | null;
+  customer: (Pick<Customer, "id" | "name" | "wallet" | "system" | "priceNgn" | "months" | "startDate"> & {
+    installmentNgn: number;
+    paidNgn: number;
+  }) | null;
 };
 
 export class ApiError extends Error {

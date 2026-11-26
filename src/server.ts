@@ -56,6 +56,12 @@ app.get("/api/stream", (c) =>
 app.get("/api/pay-info", (c) => {
   const wallet = c.req.query("wallet");
   const customer = wallet ? ledger.customerByWallet(wallet) : undefined;
+  const paidNgn = customer
+    ? ledger
+        .payments(5000)
+        .filter((p) => p.customerId === customer.id)
+        .reduce((t, p) => t + Number(BigInt(p.cngnAmount)) / 10 ** rails.decimals.cngn, 0)
+    : 0;
   const s = agent.settings;
   return c.json({
     mode: rails.mode,
@@ -68,7 +74,7 @@ app.get("/api/pay-info", (c) => {
     feeCurrency: CELO.USDT_FEE_ADAPTER,
     attributionCode: cfg.ATTRIBUTION_CODE,
     attributionSuffix: toDataSuffix(cfg.ATTRIBUTION_CODE),
-    customer: customer ? { ...customer, installmentNgn: customer.priceNgn / customer.months } : null,
+    customer: customer ? { ...customer, installmentNgn: customer.priceNgn / customer.months, paidNgn } : null,
   });
 });
 
