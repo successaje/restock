@@ -1,0 +1,49 @@
+# One-click hosting on Render (https://render.com/deploy): the agent, its API,
+# the installer dashboard and the customer pay page, from the Dockerfile.
+#
+# Render generates DASHBOARD_TOKEN; copy it from the service's Environment tab
+# to sign in. Values marked `sync: false` are asked for when the blueprint is
+# created and are never stored in this file. For a simulation demo set
+# MODE=sim and leave the key fields empty.
+services:
+  - type: web
+    name: restock
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # A persistent disk needs a paid instance. The ledger on it remembers which
+    # payments were already converted, so live mode should not run without it.
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: restock-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: MODE
+        sync: false # "live" for Celo mainnet, "sim" for the demo
+      - key: DASHBOARD_TOKEN
+        generateValue: true
+      - key: ATTRIBUTION_CODE
+        sync: false # your loops.house attribution tag
+      - key: INSTALLER_NAME
+        sync: false
+      - key: SUPPLIER_NAME
+        sync: false
+      - key: SUPPLIER_ADDRESS
+        sync: false # the only address the agent will pay
+      - key: UNIT_NAME
+        value: 3.5kVA hybrid kit
+      - key: UNIT_USD_COST
+        value: "650"
+      - key: RESTOCK_BPS
+        value: "7000"
+      - key: AGENT_PRIVATE_KEY
+        sync: false # from npm run agent:setup
+      - key: ALTANA_WALLET
+        sync: false # from npm run wallet:create
+      - key: ALTANA_SESSION_KEY
+        sync: false # from npm run grant
+      - key: ALTANA_SESSION_JSON
+        sync: false # the line npm run grant prints
+      - key: START_BLOCK
+        sync: false # a block just before your first customer payment
