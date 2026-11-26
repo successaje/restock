@@ -228,7 +228,7 @@ function Hero({ rate, r }: { rate: number | null; r: number }) {
           </motion.div>
         </div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.25, duration: 1, ease }}>
+        <motion.div className="min-w-0" initial={{ opacity: 0, scale: 0.96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.25, duration: 1, ease }}>
           <HeroFlow rate={r} />
         </motion.div>
       </div>

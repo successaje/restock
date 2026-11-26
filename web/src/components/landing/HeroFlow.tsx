@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeftRight, Banknote, KeyRound } from "lucide-react";
 import { KitGlyph } from "../illustrations/Kit";
@@ -13,6 +13,8 @@ const PAYMENTS = [
   { who: "Bisi's salon", amount: 250_000 },
 ];
 const UNIT = 650;
+const W = 560;
+const H = 572;
 
 /**
  * The product in one loop: a customer pays in naira, the agent converts the
@@ -37,8 +39,21 @@ export function HeroFlow({ rate }: { rate: number }) {
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
   const kits = Math.floor(fund / UNIT);
 
+  // Lay the scene out at its design size and scale it to fit, so phones get
+  // the same composition instead of squeezed cards.
+  const outer = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = outer.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setScale(Math.min(1, e!.contentRect.width / W)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="relative mx-auto aspect-[1/1.02] w-full max-w-[560px] select-none" aria-hidden>
+    <div ref={outer} className="relative mx-auto w-full min-w-0 max-w-[560px]" style={{ height: H * scale }} aria-hidden>
+    <div className="absolute left-0 top-0 origin-top-left select-none" style={{ width: W, height: H, transform: `scale(${scale})` }}>
       {/* soft sun */}
       <div className="absolute left-1/2 top-[44%] size-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgb(252_255_82/0.7),rgb(252_255_82/0)_68%)] dark:bg-[radial-gradient(circle,rgb(252_255_82/0.18),transparent_68%)]" />
 
@@ -144,6 +159,7 @@ export function HeroFlow({ rate }: { rate: number }) {
           <span className="size-1.5 animate-pulse-dot rounded-full bg-celo-yellow text-celo-yellow" /> Cap $2,000 · Active
         </div>
       </div>
+    </div>
     </div>
   );
 }

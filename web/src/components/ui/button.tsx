@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/format";
 import { Spinner } from "./spinner";
 
-export const buttonVariants = cva(
+const buttonBase = cva(
   [
     "relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap font-medium",
     "transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-[var(--ease-out-expo)]",
@@ -34,8 +34,11 @@ export const buttonVariants = cva(
   },
 );
 
+/** Button classes for links styled as buttons. Merged, so `className` overrides win. */
+export const buttonVariants = (p?: Parameters<typeof buttonBase>[0]) => cn(buttonBase(p));
+
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
-  VariantProps<typeof buttonVariants> & { loading?: boolean; leading?: ReactNode; trailing?: ReactNode };
+  VariantProps<typeof buttonBase> & { loading?: boolean; leading?: ReactNode; trailing?: ReactNode };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant, size, loading, leading, trailing, children, disabled, ...props },

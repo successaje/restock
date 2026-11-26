@@ -41,7 +41,7 @@ export function StatTile({
           {loading ? (
             <Skeleton className="h-7 w-28" />
           ) : (
-            <div className="truncate text-[26px] font-semibold leading-none tracking-[-0.03em]">{value}</div>
+            <div className="truncate text-[21px] font-semibold leading-none tracking-[-0.03em] sm:text-[26px]">{value}</div>
           )}
           {delta && (
             <div
@@ -54,7 +54,7 @@ export function StatTile({
             </div>
           )}
         </div>
-        {trend && <div className="shrink-0 pb-0.5">{trend}</div>}
+        {trend && <div className="hidden shrink-0 pb-0.5 sm:block">{trend}</div>}
       </div>
     </Card>
   );
