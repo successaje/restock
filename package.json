@@ -12,6 +12,7 @@
     "dev:api": "tsx watch src/server.ts",
     "build": "vite build",
     "brand": "tsx scripts/brand/render.ts",
+    "screens": "tsx scripts/brand/screens.ts",
     "start": "tsx src/server.ts",
     "agent": "tsx src/agent.ts",
     "status": "tsx scripts/status.ts",

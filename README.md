@@ -4,6 +4,14 @@
 
 > Built for [Agents Open for Business](https://www.loops.house/agents-open-for-business): Stablecoin Corridors (Textile FX) and Altana Smart Agentic Wallets tracks.
 
+![Restock landing page](docs/screenshots/landing.png)
+
+| The one number | Reorder, inside your limits |
+|---|---|
+| ![Installer overview](docs/screenshots/overview.png) | ![Reorder flow](docs/screenshots/reorder.png) |
+| **The agent's key, as a pass you can revoke** | **Customer pays from their own wallet** |
+| ![Wallet and limits](docs/screenshots/wallet.png) | <img src="docs/screenshots/pay.png" alt="Customer pay page" width="260" /> |
+
 ## The problem
 
 Lagos has thousands of small solar and inverter installers who sell systems on monthly installments in naira. Their restock costs follow the dollar: Nigeria imports roughly 90–95% of its solar components. An installer sells a system for ₦2.4m over 12 months, and by month 12 those naira may not buy the replacement stock. Large pay-as-you-go companies hedge this internally. Small installers just absorb the loss.
@@ -57,10 +65,16 @@ npm install
 npm run seed:sample
 ```
 ```bash
-npm start
+npm run dev
 ```
 
-Open http://localhost:8787. In simulation mode the chain is in memory, but **the naira rate is today's live Textile FX quote**. Click a customer's "Pays ₦…" button to see the agent convert and sweep. Then pay the supplier, try paying more than the cap, and revoke the key.
+Open http://localhost:5173 (Vite, with the API on :8787 behind it). For a production build served by the API alone:
+
+```bash
+npm run build && npm start
+```
+
+In simulation mode the chain is in memory, but **the naira rate is today's live Textile FX quote**. Open **Demo controls** in the top bar to make a customer pay, move the naira, or revoke the agent's key. Then reorder stock and try going over the cap.
 
 ### Celo mainnet
 
@@ -102,13 +116,29 @@ src/
   altana.ts       Altana client, session storage, onchain limit readers
   chain.ts        viem clients: attribution tag + USD₮ gas on every tx
   stock.ts        the one number, and the naira comparison
-  ledger.ts       SQLite record of payments, conversions, orders, activity
+  ledger.ts       SQLite record of payments, conversions, orders, activity, chart snapshots
+  settings.ts     the installer's rule, unit and supplier (editable; supplier env-locked in live)
   rails/          live (Celo mainnet) and sim implementations of the same interface
-  server.ts       API + dashboard (/) + customer pay page (/pay)
+  server.ts       API, live event stream (SSE) and the built web app
 scripts/          wallet:create, grant, revoke, agent:setup, agent:register, status
-web/              dashboard and pay page
+scripts/brand/    renders the social image, icons and README screenshots with headless Chrome
+web/src/
+  pages/          landing, installer app (overview, customers, reorder, wallet, activity, settings), pay flow
+  components/ui/  design system: buttons, cards, dialog/sheet, form controls, meter, segmented, hold-to-confirm
+  components/     app shell, charts, landing sections, brand mark
+  lib/            typed API client (types imported from the server), live updates, wagmi config
 test/             unit tests; live-readonly.ts is a mainnet read-only smoke test
 ```
+
+## Design
+
+The interface follows [Celo's brand kit](https://celo.org/brand-kit):
+- **Colours:** Gypsum backgrounds, Sand lines, Wood secondary text, Onyx type, Prosperity Yellow calls to action and Forest for protected value.
+- **Type:** Instrument Serif stands in for GT Alpina in headlines; Inter is the UI face.
+- **Dark mode:** its own set of steps, not an inversion.
+- **Charts:** colours are checked for colour-vision deficiency and contrast in both modes. Charts follow one mark spec: 2px lines, a 10% area wash, hairline grids, and a crosshair tooltip.
+- **Motion:** Motion's springs throughout, all of it respecting `prefers-reduced-motion`.
+- **Stack:** React 19, Vite, Tailwind 4, Radix primitives, TanStack Query and wagmi for the customer's wallet.
 
 ## Named users
 
