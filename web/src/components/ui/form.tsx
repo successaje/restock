@@ -5,7 +5,7 @@ import { cn } from "@/lib/format";
 
 export const Input = forwardRef<
   HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { prefix?: ReactNode; suffix?: ReactNode; invalid?: boolean }
+  Omit<InputHTMLAttributes<HTMLInputElement>, "prefix"> & { prefix?: ReactNode; suffix?: ReactNode; invalid?: boolean }
 >(function Input({ className, prefix, suffix, invalid, ...props }, ref) {
   return (
     <div
