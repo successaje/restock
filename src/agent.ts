@@ -142,7 +142,7 @@ export class RestockAgent {
       });
       this.ledger.log(
         "convert",
-        `Converted ₦${fmt(this.ngn(c.takerPays))} → $${this.usd(c.usdtOut).toFixed(2)} USD₮ on Textile FX at ₦${rate.toFixed(2)}/$`,
+        `Converted ₦${fmt(this.ngn(c.takerPays))} → $${this.usd(c.usdtOut).toFixed(2)} USD₮ on Textile FX at ₦${rate.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/$`,
         this.rails.mode === "live" ? c.txHash : null,
       );
       this.rateCache = { at: Date.now(), value: rate };
