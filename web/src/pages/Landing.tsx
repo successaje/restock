@@ -185,6 +185,7 @@ function Hero({ rate, r }: { rate: number | null; r: number }) {
               <svg className="absolute -bottom-1 left-[-2%] -z-0 h-[0.42em] w-[104%]" viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden>
                 <motion.path
                   d="M3 20 C 70 8, 150 6, 297 14"
+                  className="dark:opacity-35"
                   stroke="#FCFF52"
                   strokeWidth="18"
                   strokeLinecap="round"

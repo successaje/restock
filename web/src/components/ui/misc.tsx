@@ -12,7 +12,7 @@ export function Tooltip({ content, children, side = "top" }: { content: ReactNod
         <TooltipPrimitive.Content
           side={side}
           sideOffset={8}
-          className="z-[60] max-w-xs rounded-[10px] bg-ink px-3 py-2 text-xs leading-relaxed text-bg shadow-pop data-[state=delayed-open]:animate-in"
+          className="z-[60] max-w-xs rounded-[10px] bg-ink px-3 py-2 text-xs leading-relaxed text-bg shadow-pop"
         >
           {content}
           <TooltipPrimitive.Arrow className="fill-ink" />
