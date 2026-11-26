@@ -27,6 +27,12 @@ const Env = z.object({
   // prices: no keys, no funds. "live" sends real Celo mainnet transactions.
   MODE: z.enum(["sim", "live"]).default("sim"),
   PORT: z.coerce.number().default(8787),
+  // Interface to listen on. Unset listens on all of them (IPv4 and IPv6).
+  HOST: optional(z.string()),
+  // Unlocks the installer dashboard (reorders, settings, customer book) once
+  // the server is reachable from the internet. Required in live mode. Make
+  // one with: openssl rand -base64 24
+  DASHBOARD_TOKEN: optional(z.string().min(16, "use at least 16 characters (openssl rand -base64 24)")),
   DB_PATH: z.string().optional(), // defaults to data/<MODE>.db so sim and live never mix
   CELO_RPC_URL: z.string().url().default("https://forno.celo.org"),
 
@@ -93,7 +99,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, forSetup = fals
   }
   const c = { ...parsed.data, DB_PATH: parsed.data.DB_PATH ?? `data/${parsed.data.MODE}.db` };
   if (c.MODE === "live" && !forSetup) {
-    const missing = (["AGENT_PRIVATE_KEY", "ALTANA_WALLET", "ALTANA_SESSION_KEY", "SUPPLIER_ADDRESS"] as const).filter(
+    const missing = (["AGENT_PRIVATE_KEY", "ALTANA_WALLET", "ALTANA_SESSION_KEY", "SUPPLIER_ADDRESS", "DASHBOARD_TOKEN"] as const).filter(
       (k) => !c[k],
     );
     if (missing.length) throw new Error(`MODE=live needs: ${missing.join(", ")}. See .env.example.`);

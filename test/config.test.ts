@@ -15,7 +15,8 @@ test("session keys expire at the last second of the quarter, Lagos time", () => 
 });
 
 test("live mode refuses to start without its keys", () => {
-  assert.throws(() => loadConfig({ MODE: "live" }), /AGENT_PRIVATE_KEY, ALTANA_WALLET, ALTANA_SESSION_KEY, SUPPLIER_ADDRESS/);
+  assert.throws(() => loadConfig({ MODE: "live" }), /AGENT_PRIVATE_KEY, ALTANA_WALLET, ALTANA_SESSION_KEY, SUPPLIER_ADDRESS, DASHBOARD_TOKEN/);
+  assert.throws(() => loadConfig({ MODE: "sim", DASHBOARD_TOKEN: "short" }), /DASHBOARD_TOKEN: use at least 16/);
   assert.throws(() => loadConfig({ MODE: "sim", RESTOCK_BPS: "12000" }), /RESTOCK_BPS/);
   assert.equal(loadConfig({ MODE: "live" }, true).MODE, "live"); // setup scripts run before the keys exist
 });
@@ -29,6 +30,7 @@ test("in live mode only the server's environment can change who gets paid", () =
     ALTANA_SESSION_KEY: KEY,
     SUPPLIER_ADDRESS: SUPPLIER,
     ATTRIBUTION_CODE: "celo_abc123",
+    DASHBOARD_TOKEN: "a-long-enough-test-token",
   });
   const ledger = new Ledger(":memory:");
   assert.throws(() => writeSettings(cfg, ledger, { supplierAddress: `0x${"de".repeat(20)}` }), /SUPPLIER_ADDRESS/);
