@@ -1,0 +1,39 @@
+{
+  "name": "restock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An agent that protects solar installers' naira installment income from devaluation: cNGN in, USD\u20ae restock fund out, supplier paid from a capped Altana wallet.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "agent": "tsx src/agent.ts",
+    "status": "tsx scripts/status.ts",
+    "rate": "tsx scripts/rate.ts",
+    "seed:sample": "tsx scripts/seed-sample.ts",
+    "wallet:create": "tsx scripts/create-wallet.ts",
+    "grant": "tsx scripts/grant.ts",
+    "revoke": "tsx scripts/revoke.ts",
+    "agent:setup": "tsx scripts/agent-setup.ts",
+    "agent:register": "tsx scripts/register-agent.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx 'test/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@altananetwork/sdk": "^1.2.0",
+    "@celo/attribution-tags": "^0.5.0",
+    "@hono/node-server": "^2.1.11",
+    "dotenv": "^18.0.10",
+    "hono": "^4.13.22",
+    "viem": "^2.58.7",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

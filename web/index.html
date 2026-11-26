@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Restock</title>
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="dot"></span>Restock</div>
+    <div class="who" id="installer"></div>
+    <div class="spacer"></div>
+    <span class="pill" id="mode"></span>
+  </header>
+
+  <div class="grid">
+    <section class="card span-12">
+      <h2>Stock your customer book can buy today</h2>
+      <div class="hero">
+        <div class="big" id="units">–</div>
+        <div class="lede" id="lede">Loading…</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Restock fund (dollars)</div><div class="v" id="fundUsd">–</div></div>
+        <div class="stat"><div class="k">Worth in naira today</div><div class="v" id="fundNgn">–</div></div>
+        <div class="stat"><div class="k">Compared with keeping naira</div><div class="v" id="protected">–</div></div>
+        <div class="stat"><div class="k">Naira rate today (Textile FX)</div><div class="v" id="rate">–</div></div>
+      </div>
+    </section>
+
+    <section class="card span-7 whatif">
+      <h2>What if the naira falls?</h2>
+      <div class="row" style="justify-content:space-between">
+        <span>Naira weakens by <b id="wiPct">20%</b></span>
+        <span class="sub" id="wiRate"></span>
+      </div>
+      <input type="range" id="wi" min="0" max="60" step="5" value="20" />
+      <div class="compare">
+        <div><div class="sub">Kept in naira, would buy</div><div class="n" id="wiNaira">–</div></div>
+        <div class="with"><div class="sub">With Restock, still buys</div><div class="n" id="wiRestock">–</div></div>
+      </div>
+      <p class="sub" style="margin:12px 0 0" id="wiNote"></p>
+    </section>
+
+    <section class="card span-5">
+      <h2>Reorder from your supplier</h2>
+      <h3 id="supplierName">–</h3>
+      <div class="sub" id="unitLine"></div>
+      <div class="row" style="margin-top:14px">
+        <div class="stepper">
+          <button type="button" id="minus">−</button>
+          <input type="number" id="orderUnits" min="1" value="1" />
+          <button type="button" id="plus">+</button>
+        </div>
+        <button class="primary" id="payBtn">Pay supplier</button>
+      </div>
+      <div id="orderMsg"></div>
+      <h2 style="margin-top:22px">The agent's spending limits <span class="pill" id="sessionPill" style="margin-left:6px"></span></h2>
+      <dl class="limits" id="limits"></dl>
+      <div class="row" id="sessionCtl"></div>
+    </section>
+
+    <section class="card span-8">
+      <h2>Customers paying in installments</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Customer</th><th class="hide-sm">System</th><th class="num">Monthly</th><th>Paid</th><th></th></tr></thead>
+        <tbody id="customers"></tbody>
+      </table></div>
+      <details style="margin-top:14px">
+        <summary>Add a customer</summary>
+        <form class="inline" id="addCustomer">
+          <input type="text" name="name" placeholder="Name" required />
+          <input type="text" name="wallet" placeholder="Their wallet 0x…" required pattern="^0x[0-9a-fA-F]{40}$" />
+          <input type="text" name="system" placeholder="System sold" required />
+          <input type="number" name="priceNgn" placeholder="Price ₦" required min="1" />
+          <input type="number" name="months" placeholder="Months" required min="1" value="12" />
+          <button class="primary" type="submit">Add</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="card span-4">
+      <h2>What the agent did</h2>
+      <ul class="feed" id="feed"></ul>
+    </section>
+
+    <section class="card span-12">
+      <details>
+        <summary>Onchain details</summary>
+        <div class="kv" id="chain"></div>
+        <h2 style="margin-top:18px">Conversions on Textile FX</h2>
+        <table>
+          <thead><tr><th>When</th><th class="num">Naira in</th><th class="num">USD₮ out</th><th class="num">Rate</th><th>Transaction</th></tr></thead>
+          <tbody id="conversions"></tbody>
+        </table>
+        <h2 style="margin-top:18px">Supplier payments</h2>
+        <table>
+          <thead><tr><th>When</th><th>Units</th><th class="num">USD₮</th><th>Result</th><th>Transaction</th></tr></thead>
+          <tbody id="orders"></tbody>
+        </table>
+      </details>
+    </section>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const ngn = (n) => "₦" + Math.round(n).toLocaleString("en-NG");
+const usd = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const short = (a) => a ? a.slice(0, 6) + "…" + a.slice(-4) : "";
+const when = (iso) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const txLink = (h) => h ? `<a class="mono" href="https://celoscan.io/tx/${h}" target="_blank" rel="noopener">${short(h)}</a>` : `<span class="sub">simulated</span>`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+let S = null;
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, body: j };
+}
+
+function render() {
+  const s = S, st = s.stock;
+  $("installer").textContent = s.installer;
+  $("mode").textContent = s.mode === "live" ? "Celo mainnet" : "Simulation · live Textile prices";
+  $("mode").className = "pill " + (s.mode === "live" ? "good" : "sun");
+
+  if (st) {
+    $("units").innerHTML = `${st.unitsToday}<small>${st.unitsToday === 1 ? "kit" : "kits"}</small>`;
+    const held = st.nairaBehindFund > 0
+      ? ` If those installments had stayed in naira, they would buy <b>${st.unitsIfHeldNaira}</b>.`
+      : "";
+    $("lede").innerHTML = `Your restock fund can pay for <b>${plural(st.unitsToday, "kit")}</b> (${esc(s.unit.name)}, ${usd(s.unit.usdCost)} each from ${esc(s.supplier.name)}).${held}
+      <div class="sub" style="margin-top:6px">If the rest of your customer book pays on time, it covers <b>${st.projectedUnits}</b> in total.</div>`;
+    $("fundUsd").textContent = usd(st.fundUsd);
+    $("fundNgn").textContent = ngn(st.fundNgnToday);
+    // Within 0.5% is noise (the agent's gas reserve, rounding), not a gain or loss.
+    const p = st.ngnProtected, flat = Math.abs(p) < st.nairaBehindFund * 0.005;
+    $("protected").textContent = !st.nairaBehindFund ? "–" : flat ? "About the same" : (p >= 0 ? "+" : "−") + ngn(Math.abs(p));
+    $("protected").className = "v " + (!st.nairaBehindFund || flat ? "" : p >= 0 ? "good" : "bad");
+    $("rate").textContent = "₦" + s.ngnPerUsd.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " / $";
+  } else {
+    $("lede").textContent = "Waiting for a live rate from Textile FX…";
+  }
+  renderWhatIf();
+
+  // supplier + session
+  $("supplierName").textContent = s.supplier.name;
+  $("unitLine").innerHTML = `${esc(s.unit.name)} · ${usd(s.unit.usdCost)} each · paid in USD₮ to ${s.supplier.address ? `<span class="mono">${short(s.supplier.address)}</span>` : "<b>no supplier set</b>"}`;
+  const se = s.session;
+  const pill = { active: ["good", "Active"], revoked: ["bad", "Revoked"], expired: ["bad", "Expired"], missing: ["bad", "Not granted"] }[se.status];
+  $("sessionPill").className = "pill " + pill[0];
+  $("sessionPill").textContent = pill[1];
+  const cap = se.caps[0];
+  $("limits").innerHTML = se.status === "missing" ? `<dt>Session key</dt><dd>Not granted yet</dd>` : `
+    <dt>Can spend</dt><dd>${cap ? `${usd(cap.limit - cap.spent)} left of ${usd(cap.limit)}` : "no cap"}</dd>
+    <dt>Can only call</dt><dd>${se.allowlist.length ? "USD₮ transfers" : "–"}</dd>
+    <dt>Can only pay</dt><dd>${esc(s.supplier.name)} <span class="sub">(checked by the agent)</span></dd>
+    <dt>Stops working</dt><dd>${se.expiry ? new Date(se.expiry * 1000).toLocaleString("en-GB", { timeZone: "Africa/Lagos", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "–"} <span class="sub">(end of quarter, Lagos time)</span></dd>`;
+  $("sessionCtl").innerHTML = s.mode === "sim"
+    ? (se.status === "active" ? `<button class="danger sm" id="revoke">Revoke the agent's key</button>` : `<button class="sm" id="grant">Grant a new key</button>`)
+    : `<span class="sub">Revoke from your own wallet with <span class="mono">npm run revoke</span>. ${se.explorerUrl ? `<a href="${se.explorerUrl}" target="_blank" rel="noopener">View grant</a>` : ""}</span>`;
+  $("revoke")?.addEventListener("click", async () => { await api("/api/sim/revoke", {}); refresh(); });
+  $("grant")?.addEventListener("click", async () => { await api("/api/sim/grant", {}); refresh(); });
+
+  // customers
+  $("customers").innerHTML = s.customers.length ? s.customers.map((c) => {
+    const pct = Math.min(100, (c.paidNgn / c.priceNgn) * 100);
+    return `<tr>
+      <td><b>${esc(c.name)}</b><div class="sub mono">${short(c.wallet)}</div></td>
+      <td class="hide-sm">${esc(c.system)}<div class="sub">${ngn(c.priceNgn)} over ${c.months} months</div></td>
+      <td class="num">${ngn(c.installmentNgn)}</td>
+      <td><div class="bar"><i style="width:${pct}%"></i></div><div class="sub">${ngn(c.paidNgn)} · ${c.behind ? '<span style="color:var(--bad)">behind</span>' : "on track"}</div></td>
+      <td class="num">${s.mode === "sim"
+        ? `<button class="sm" data-pay="${c.wallet}" data-amt="${c.installmentNgn}">Pays ${ngn(c.installmentNgn)}</button>`
+        : `<a class="sub" href="/pay?wallet=${c.wallet}" target="_blank">Payment link</a>`}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" class="empty">No customers yet. Add the people paying you in installments.</td></tr>`;
+  document.querySelectorAll("[data-pay]").forEach((b) => b.addEventListener("click", async () => {
+    b.disabled = true;
+    await api("/api/sim/pay", { from: b.dataset.pay, amountNgn: Number(b.dataset.amt) });
+    refresh();
+  }));
+
+  // feed
+  const icon = { payment: "₦", convert: "⇄", restock: "▣", blocked: "✕", session: "⚿", info: "·", error: "!" };
+  $("feed").innerHTML = s.events.length ? s.events.map((e) => `<li>
+      <span class="ic ${e.kind}">${icon[e.kind] ?? "·"}</span>
+      <div>${esc(e.message)}${e.txHash ? `<div>${txLink(e.txHash)}</div>` : ""}</div>
+      <time>${when(e.at)}</time></li>`).join("") : `<li class="empty">Nothing yet.</li>`;
+
+  // onchain
+  $("chain").innerHTML = `
+    <div>Network</div><div>${s.mode === "live" ? "Celo mainnet (42220)" : "Simulated; prices are live Textile FX previews"}</div>
+    <div>Agent wallet (customers pay here)</div><div class="mono">${s.agent.address} · ${ngn(s.agent.cngn)} cNGN · ${usd(s.agent.usdt)} USD₮</div>
+    <div>Restock wallet (Altana)</div><div class="mono">${s.fund.address} · ${usd(s.fund.usdt)} USD₮</div>
+    <div>Rule</div><div>${s.rule.restockBps / 100}% of each installment to restock, the rest to cash</div>
+    <div>Session key</div><div class="mono">${se.keyId ?? "–"}</div>`;
+  $("conversions").innerHTML = s.conversions.length ? s.conversions.map((c) => `<tr>
+      <td>${when(c.at)}</td><td class="num">${ngn(c.ngn)}</td><td class="num">${usd(c.usd)}</td><td class="num">₦${c.ngnPerUsd.toFixed(2)}</td><td>${txLink(c.txHash)}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="empty">No conversions yet.</td></tr>`;
+  $("orders").innerHTML = s.orders.length ? s.orders.map((o) => `<tr>
+      <td>${when(o.at)}</td><td>${o.units}</td><td class="num">${usd(o.usd)}</td>
+      <td>${o.status === "paid" ? '<span class="pill good">Paid</span>' : `<span class="pill bad">Blocked</span> <span class="sub">${esc((o.reason || "").split(":")[0])}</span>`}</td>
+      <td>${o.status === "paid" ? txLink(o.txHash) : "–"}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="empty">No supplier payments yet.</td></tr>`;
+}
+
+function renderWhatIf() {
+  if (!S?.stock) return;
+  const pct = Number($("wi").value);
+  const st = S.stock, rate = S.ngnPerUsd, cost = S.unit.usdCost;
+  const naira = st.nairaBehindFund > 0 ? st.nairaBehindFund : st.fundUsd * rate;
+  const weaker = rate * (1 + pct / 100);
+  $("wiPct").textContent = pct + "%";
+  $("wiRate").textContent = `₦${Math.round(weaker).toLocaleString("en-NG")} / $`;
+  $("wiNaira").textContent = plural(Math.floor(naira / weaker / cost), "kit");
+  $("wiRestock").textContent = plural(Math.floor(st.fundUsd / cost), "kit");
+  $("wiNote").textContent = `${ngn(naira)} of installments held as naira would be worth ${usd(naira / weaker)} at that rate. Converted as it arrived, the fund stays at ${usd(st.fundUsd)}.`;
+}
+
+$("wi").addEventListener("input", renderWhatIf);
+$("minus").addEventListener("click", () => { $("orderUnits").value = Math.max(1, Number($("orderUnits").value) - 1); });
+$("plus").addEventListener("click", () => { $("orderUnits").value = Number($("orderUnits").value) + 1; });
+$("payBtn").addEventListener("click", async () => {
+  const units = Number($("orderUnits").value);
+  $("payBtn").disabled = true;
+  const r = await api("/api/restock", { units });
+  $("payBtn").disabled = false;
+  const o = r.body;
+  $("orderMsg").innerHTML = o.status === "paid"
+    ? `<div class="notice good">Paid ${S.supplier.name} for ${plural(units, "kit")}.</div>`
+    : `<div class="notice bad">Blocked: ${esc(o.reason || o.error || "refused")}</div>`;
+  refresh();
+});
+$("addCustomer").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const r = await api("/api/customers", { name: f.get("name"), wallet: f.get("wallet"), system: f.get("system"), priceNgn: Number(f.get("priceNgn")), months: Number(f.get("months")) });
+  if (r.ok) { e.target.reset(); refresh(); } else alert(JSON.stringify(r.body.error));
+});
+
+async function refresh() {
+  const r = await api("/api/state");
+  if (r.ok) { S = r.body; render(); }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
