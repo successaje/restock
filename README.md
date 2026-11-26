@@ -1,5 +1,7 @@
 # Restock
 
+[![CI](https://github.com/successaje/restock/actions/workflows/ci.yml/badge.svg)](https://github.com/successaje/restock/actions/workflows/ci.yml)
+
 **Protecting solar installers from naira devaluation.** An agent on Celo that takes customers' naira installments, keeps the restock share in dollars as it arrives, and pays the importer from a wallet the installer controls and can switch off.
 
 > Built for [Agents Open for Business](https://www.loops.house/agents-open-for-business): Stablecoin Corridors (Textile FX) and Altana Smart Agentic Wallets tracks.
@@ -49,6 +51,7 @@ The currency conversion is the product, not a swap button bolted onto a payments
 | Agent acts from an Altana wallet on Celo mainnet | [`src/rails/live.ts`](src/rails/live.ts) `paySupplier` calls `client.execute({ session, … })`. |
 | Session key with spend cap, contract allowlist and expiry | [`scripts/grant.ts`](scripts/grant.ts): `USD₮.transfer` only, `SESSION_CAP_USDT`, end-of-quarter expiry. Live limits are read back from the wallet and shown on the dashboard. |
 | Revoke transaction, and the agent being stopped | [`scripts/revoke.ts`](scripts/revoke.ts). After revoke, the next reorder comes back `session_revoked` and the dashboard shows it. |
+| Guardrails proven, not just claimed | [`test/agent.test.ts`](test/agent.test.ts) runs every refusal (cap, wrong supplier, revoked, expired, no funds) and checks no money moved. It runs in [CI](.github/workflows/ci.yml) on every push. |
 | ERC-8004 identity | [`scripts/register-agent.ts`](scripts/register-agent.ts) registers from the agent wallet. |
 | Attribution tag on every transaction | [`src/chain.ts`](src/chain.ts): a client-level `dataSuffix` on the agent's wallet client. Altana calls carry it via `appCode`, and the customer pay page appends it too. |
 
@@ -80,14 +83,45 @@ In simulation mode the chain is in memory, but **the naira rate is today's live 
 
 Each step says whose key it uses. The owner (installer) key never goes into the running agent.
 
-1. `cp .env.example .env`, set `MODE=live`, `ATTRIBUTION_CODE` (from your loops.house entry), `INSTALLER_NAME`, `SUPPLIER_NAME`, `SUPPLIER_ADDRESS`, `UNIT_NAME`, `UNIT_USD_COST`.
+1. `cp .env.example .env`, set `MODE=live`, `ATTRIBUTION_CODE` (from your loops.house entry), `INSTALLER_NAME`, `SUPPLIER_NAME`, `SUPPLIER_ADDRESS`, `UNIT_NAME`, `UNIT_USD_COST`, and a `DASHBOARD_TOKEN` (`openssl rand -base64 24`). The token is the installer's access key for the dashboard.
 2. **Installer:** `npm run wallet:create`. This turns a fresh owner key into an Altana wallet (same address). Fund it with about 25 CELO for KeyStore registration fees and a little USD₮ for relay fees.
-3. **Installer:** `npm run grant`. This grants the agent's session key and writes `data/session.json`.
+3. **Installer:** `npm run grant`. This grants the agent's session key, writes `data/session.json`, and prints the same thing as one `ALTANA_SESSION_JSON` line for a hosted agent.
 4. **Agent:** `npm run agent:setup`. This creates the agent key and sets a standing cNGN allowance for Textile. Send the agent wallet about 0.2 USD₮ for gas first; it pays gas in USD₮ via Celo fee abstraction.
 5. **Agent:** `npm run agent:register` registers the ERC-8004 identity.
 6. `npm run status` is a preflight check. Then `npm start`.
 7. Add the installer's customers on the dashboard. Each row has a payment link (`/pay?wallet=0x…`) the customer opens in their wallet browser.
 8. To demo the guardrails: pay the supplier, then try more than the cap, then `npm run revoke` and try again.
+
+### Host it
+
+Customers open their payment link on their phones, so a live agent needs a public URL. One container runs the agent loop, the API and the web app:
+
+```bash
+docker build -t restock .
+```
+```bash
+grep -v '^OWNER_PRIVATE_KEY' .env > .env.host
+```
+```bash
+docker run -p 8787:8787 --env-file .env.host -v restock-data:/app/data restock
+```
+
+Keep `/app/data` on persistent storage. The ledger there records which payments were already converted. On [Render](https://render.com/deploy), [`render.yaml`](render.yaml) sets this up as a blueprint: a disk for the ledger, a generated `DASHBOARD_TOKEN`, and a prompt for each key at setup, so none are stored in the repo.
+
+The owner key never goes on the host. Only the agent key, the session key and `ALTANA_SESSION_JSON` do, and the session key can only make capped `USD₮.transfer` calls that the installer can revoke.
+
+### Tests
+
+```bash
+npm test
+```
+
+Runs offline against the simulated chain with the naira pinned at ₦1,500/$, so every figure is exact:
+- **The money path:** split, conversion, sweep and cash share, batching of small installments, retry after a failed quote, and duplicate transfers counted once.
+- **Every guardrail:** spend cap, wrong supplier, revoked key, expired key and an empty fund. Each test checks the refusal reason and that no money moved.
+- **The API:** which routes the access key locks and which stay public for customers, the cookie's flags, key rotation, rate limiting, and input validation.
+
+`npx tsx test/live-readonly.ts` is a separate read-only check against Celo mainnet.
 
 ## Demo script (2–3 minutes)
 
@@ -106,6 +140,7 @@ Each step says whose key it uses. The owner (installer) key never goes into the 
 - **Small payments are batched.** Textile's floor is about $1, so installments under `MIN_CONVERT_CNGN` wait and are converted together.
 - **cNGN regulation is early.** WrappedCBDC holds SEC ARIP approval-in-principle, not a final licence.
 - **No custody by us.** The restock wallet is the installer's own address. The agent key can only do what the session key allows, and the installer can revoke it at any time.
+- **One access key for the dashboard.** Reorders, settings and the customer book need `DASHBOARD_TOKEN`; the pay page and today's rate are public. A signed-in browser holds an HttpOnly, SameSite=Strict cookie derived from the key, so changing the key signs everyone out. One installer per agent for now; staff accounts are a later step.
 
 ## Layout
 
@@ -119,7 +154,9 @@ src/
   ledger.ts       SQLite record of payments, conversions, orders, activity, chart snapshots
   settings.ts     the installer's rule, unit and supplier (editable; supplier env-locked in live)
   rails/          live (Celo mainnet) and sim implementations of the same interface
-  server.ts       API, live event stream (SSE) and the built web app
+  app.ts          API routes, live event stream (SSE) and the built web app
+  auth.ts         the installer's access key: sign-in, cookie, rate limit
+  server.ts       runs the app and the agent loop in one process
 scripts/          wallet:create, grant, revoke, agent:setup, agent:register, status
 scripts/brand/    renders the social image, icons and README screenshots with headless Chrome
 web/src/
@@ -127,7 +164,8 @@ web/src/
   components/ui/  design system: buttons, cards, dialog/sheet, form controls, meter, segmented, hold-to-confirm
   components/     app shell, charts, landing sections, brand mark
   lib/            typed API client (types imported from the server), live updates, wagmi config
-test/             unit tests; live-readonly.ts is a mainnet read-only smoke test
+test/             agent loop, guardrails, API and config tests; live-readonly.ts is a mainnet read-only smoke test
+Dockerfile        one container for agent, API and web app; render.yaml hosts it on Render
 ```
 
 ## Design
