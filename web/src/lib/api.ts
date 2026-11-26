@@ -53,7 +53,13 @@ async function request<T>(path: string, init?: RequestInit & { json?: unknown })
   return body as T;
 }
 
+export type Session = { required: boolean; signedIn: boolean };
+
 export const api = {
+  session: () => request<Session>("/api/session"),
+  signIn: (token: string) => request<{ ok: true }>("/api/session", { method: "POST", json: { token } }),
+  signOut: () => request<{ ok: true }>("/api/session", { method: "DELETE" }),
+  rate: () => request<{ mode: "sim" | "live"; ngnPerUsd: number | null }>("/api/rate"),
   state: () => request<AppState>("/api/state"),
   history: (days = 30) => request<History>(`/api/history?days=${days}`),
   payInfo: (wallet?: string) => request<PayInfo>(`/api/pay-info${wallet ? `?wallet=${encodeURIComponent(wallet)}` : ""}`),

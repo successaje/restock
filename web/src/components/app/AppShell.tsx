@@ -5,6 +5,7 @@ import {
   Activity,
   Gauge,
   KeyRound,
+  LogOut,
   Moon,
   PackageCheck,
   Settings2,
@@ -15,10 +16,12 @@ import {
 import { Logo, LogoMark } from "../brand/Logo";
 import { Badge } from "../ui/badge";
 import { Tooltip } from "../ui/misc";
-import { useAppState, useLiveStatus, useLiveUpdates } from "@/lib/queries";
+import { useAppState, useLiveStatus, useLiveUpdates, useSession, useSignOut } from "@/lib/queries";
 import { useTheme } from "@/hooks/useTheme";
 import { cn, rate } from "@/lib/format";
 import { DemoControls } from "./DemoControls";
+import { PageLoader } from "./PageLoader";
+import { SignIn } from "./SignIn";
 
 type NavItem = { to: string; label: string; short?: string; icon: LucideIcon; end?: boolean };
 const NAV: NavItem[] = [
@@ -30,7 +33,15 @@ const NAV: NavItem[] = [
   { to: "/app/settings", label: "Settings", icon: Settings2 },
 ];
 
+/** The dashboard, or the sign-in screen when this agent needs an access key. */
 export default function AppShell() {
+  const session = useSession();
+  if (session.isPending) return <PageLoader />;
+  if (session.data?.required && !session.data.signedIn) return <SignIn />;
+  return <Shell />;
+}
+
+function Shell() {
   useLiveUpdates();
   const { data } = useAppState();
   const location = useLocation();
@@ -122,6 +133,8 @@ function SideLink({ item }: { item: NavItem }) {
 }
 
 function InstallerCard({ name, mode }: { name?: string; mode?: "sim" | "live" }) {
+  const session = useSession();
+  const signOut = useSignOut();
   const initials = (name ?? "")
     .replace(/\(.*\)/, "")
     .split(/\s+/)
@@ -138,6 +151,18 @@ function InstallerCard({ name, mode }: { name?: string; mode?: "sim" | "live" })
         <div className="truncate text-[13px] font-semibold">{name ?? "—"}</div>
         <div className="text-xs text-muted">{mode === "live" ? "Celo mainnet" : "Demo workspace"}</div>
       </div>
+      {session.data?.required && (
+        <Tooltip content="Sign out of this browser">
+          <button
+            onClick={() => signOut.mutate()}
+            disabled={signOut.isPending}
+            className="grid size-8 shrink-0 place-items-center rounded-[9px] text-muted transition hover:bg-surface-2 hover:text-ink disabled:opacity-50"
+            aria-label="Sign out"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </Tooltip>
+      )}
     </div>
   );
 }

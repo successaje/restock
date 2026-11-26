@@ -13,7 +13,8 @@ export const Input = forwardRef<
         "group flex h-11 items-center gap-2 rounded-[12px] border bg-surface px-3.5 transition",
         "border-line hover:border-line-strong focus-within:border-ink focus-within:ring-4 focus-within:ring-ink/5",
         "dark:focus-within:border-brand dark:focus-within:ring-brand/10",
-        invalid && "border-bad focus-within:border-bad",
+        invalid &&
+          "border-bad hover:border-bad focus-within:border-bad focus-within:ring-bad/10 dark:focus-within:border-bad dark:focus-within:ring-bad/15",
         className,
       )}
     >
@@ -50,7 +51,13 @@ export function Field({
         {label}
       </label>
       {children(fid)}
-      {error ? <p className="text-xs text-bad">{error}</p> : hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {error ? (
+        <p role="alert" className="text-xs text-bad">
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="text-xs text-muted">{hint}</p>
+      ) : null}
     </div>
   );
 }

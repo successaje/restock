@@ -38,7 +38,7 @@ const FALLBACK_RATE = 1440;
 const ease = [0.16, 1, 0.3, 1] as const;
 
 function useLiveRate() {
-  const { data } = useQuery({ queryKey: ["state"], queryFn: api.state, retry: false, staleTime: 60_000 });
+  const { data } = useQuery({ queryKey: ["rate"], queryFn: api.rate, retry: false, staleTime: 60_000 });
   return { rate: data?.ngnPerUsd ?? null, mode: data?.mode };
 }
 

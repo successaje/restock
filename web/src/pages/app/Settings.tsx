@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Lock, Monitor, Moon, Sun } from "lucide-react";
+import { Lock, LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
-import { useAppState, useUpdateSettings } from "@/lib/queries";
+import { useAppState, useSession, useSignOut, useUpdateSettings } from "@/lib/queries";
 import type { Settings as S } from "@/lib/api";
 import { cn, ngn } from "@/lib/format";
 import { useTheme } from "@/hooks/useTheme";
@@ -148,6 +148,7 @@ export default function Settings() {
         </Card>
 
         <Appearance />
+        <Access />
       </div>
 
       <AnimatePresence>
@@ -174,6 +175,26 @@ export default function Settings() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function Access() {
+  const session = useSession();
+  const signOut = useSignOut();
+  if (!session.data?.required) return null;
+  return (
+    <Card>
+      <CardHeader
+        title="Access"
+        description="This browser is signed in with your access key. Changing DASHBOARD_TOKEN on the server signs every browser out."
+        action={
+          <Button size="sm" leading={<LogOut />} loading={signOut.isPending} onClick={() => signOut.mutate()}>
+            Sign out
+          </Button>
+        }
+        className="pb-5 sm:pb-6"
+      />
+    </Card>
   );
 }
 

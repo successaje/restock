@@ -19,7 +19,7 @@ import type { AgentEvent } from "./ledger.js";
 import { SimRails } from "./rails/sim.js";
 
 /** Routes anyone may call: the customer pay flow, sign-in, and health checks. */
-const PUBLIC = new Set(["/api/health", "/api/pay-info", "/api/session"]);
+const PUBLIC = new Set(["/api/health", "/api/pay-info", "/api/session", "/api/rate"]);
 
 export function createApp(agent: RestockAgent, opts: { webDist?: string } = {}) {
   const { cfg, ledger, rails } = agent;
@@ -41,6 +41,9 @@ export function createApp(agent: RestockAgent, opts: { webDist?: string } = {}) 
 
   // ---------------------------------------------------------------- public
   app.get("/api/health", (c) => c.json({ ok: true, mode: rails.mode }));
+
+  // Today's naira rate for the landing page: market data, nothing about the book.
+  app.get("/api/rate", async (c) => c.json({ mode: rails.mode, ngnPerUsd: await agent.rate().catch(() => null) }));
 
   app.get("/api/session", auth.status);
   app.post("/api/session", auth.signIn);

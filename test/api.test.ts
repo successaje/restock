@@ -59,6 +59,8 @@ test("with a token, the installer's routes are locked and the customer's stay op
   assert.match(body.attributionSuffix, /^0x[0-9a-f]+$/);
   assert.equal(body.customer.name, "Adaeze");
   assert.equal((await c.call("/api/health")).status, 200);
+  const rate = (await (await c.call("/api/rate")).json()) as { ngnPerUsd: number };
+  assert.equal(rate.ngnPerUsd, 1500, "the landing page's live rate stays public");
 });
 
 test("signing in sets a strict, HttpOnly cookie that unlocks the dashboard", async () => {

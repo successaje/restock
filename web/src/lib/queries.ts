@@ -2,21 +2,53 @@
 // events; each one refreshes the queries and, for the events an installer
 // cares about, raises a toast.
 import { useEffect, useSyncExternalStore } from "react";
-import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { api, type ActivityEvent, type Settings } from "./api";
+import { api, ApiError, type ActivityEvent, type Settings } from "./api";
+
+const signedOut = (err: unknown) => err instanceof ApiError && err.status === 401;
+
+// A 401 from any installer route means this browser's sign-in has lapsed (or
+// the access key was rotated): re-check the session so the dashboard swaps
+// itself for the sign-in screen.
+const recheckSession = (err: unknown) => {
+  if (signedOut(err)) void queryClient.invalidateQueries({ queryKey: keys.session });
+};
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: recheckSession }),
+  mutationCache: new MutationCache({ onError: recheckSession }),
   defaultOptions: {
-    queries: { staleTime: 4_000, refetchOnWindowFocus: true, retry: 2 },
+    queries: { staleTime: 4_000, refetchOnWindowFocus: true, retry: (n, err) => !signedOut(err) && n < 2 },
   },
 });
 
 export const keys = {
+  session: ["session"] as const,
   state: ["state"] as const,
   history: (days: number) => ["history", days] as const,
   payInfo: (wallet?: string) => ["pay-info", wallet ?? ""] as const,
 };
+
+export const useSession = () => useQuery({ queryKey: keys.session, queryFn: api.session, staleTime: Infinity });
+
+export function useSignIn() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: api.signIn, onSuccess: () => qc.invalidateQueries({ queryKey: keys.session }) });
+}
+
+export function useSignOut() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.signOut,
+    onSuccess: async () => {
+      // Drop the book from memory before the sign-in screen comes back.
+      qc.removeQueries({ queryKey: keys.state });
+      qc.removeQueries({ queryKey: ["history"] });
+      await qc.invalidateQueries({ queryKey: keys.session });
+    },
+  });
+}
 
 export const useAppState = () => useQuery({ queryKey: keys.state, queryFn: api.state, refetchInterval: 20_000 });
 export const useHistory = (days = 30) =>
