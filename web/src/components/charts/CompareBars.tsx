@@ -28,7 +28,7 @@ export function CompareBars({ rows, unitName }: { rows: Row[]; unitName: string 
                 <span className="tnum ml-2 text-muted">{usd(r.usd)}</span>
               </span>
             </div>
-            <div className="h-6 w-full" role="cell" aria-label={`${r.label}: ${usd(r.usd)}, ${plural(r.units, unitName)}`}>
+            <div className="h-6 w-full" role="cell" aria-label={`${r.label}: ${usd(r.usd)}, ${r.units} × ${unitName}`}>
               <motion.div
                 className={`h-full rounded-r-[6px] ${color}`}
                 initial={false}

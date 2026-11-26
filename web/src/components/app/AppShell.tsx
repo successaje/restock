@@ -24,7 +24,7 @@ type NavItem = { to: string; label: string; short?: string; icon: LucideIcon; en
 const NAV: NavItem[] = [
   { to: "/app", label: "Overview", icon: Gauge, end: true },
   { to: "/app/customers", label: "Customers", icon: Users },
-  { to: "/app/restock", label: "Restock", icon: PackageCheck },
+  { to: "/app/restock", label: "Reorder", icon: PackageCheck },
   { to: "/app/wallet", label: "Wallet & limits", short: "Wallet", icon: KeyRound },
   { to: "/app/activity", label: "Activity", icon: Activity },
   { to: "/app/settings", label: "Settings", icon: Settings2 },
