@@ -26,35 +26,36 @@ export function StatTile({
 }) {
   return (
     <Card className={cn("flex flex-col justify-between gap-4 p-5", className)}>
-      <div className="flex items-center gap-1.5 text-[13px] text-muted">
-        {label}
-        {help && (
-          <Tooltip content={help}>
-            <button className="text-faint transition hover:text-ink" aria-label={`About ${label}`}>
-              <Info className="size-3.5" />
-            </button>
-          </Tooltip>
-        )}
-      </div>
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          {loading ? (
-            <Skeleton className="h-7 w-28" />
-          ) : (
-            <div className="truncate text-[21px] font-semibold leading-none tracking-[-0.03em] sm:text-[26px]">{value}</div>
-          )}
-          {delta && (
-            <div
-              className={cn(
-                "mt-2 text-xs font-medium",
-                deltaTone === "good" ? "text-good" : deltaTone === "bad" ? "text-bad" : "text-muted",
-              )}
-            >
-              {delta}
-            </div>
+      {/* Label row carries the sparkline, so the value always has the full width. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-1.5 text-[13px] text-muted">
+          {label}
+          {help && (
+            <Tooltip content={help}>
+              <button className="text-faint transition hover:text-ink" aria-label={`About ${label}`}>
+                <Info className="size-3.5" />
+              </button>
+            </Tooltip>
           )}
         </div>
-        {trend && <div className="hidden shrink-0 pb-0.5 sm:block">{trend}</div>}
+        {trend && <div className="-mt-1 hidden shrink-0 sm:block">{trend}</div>}
+      </div>
+      <div className="min-w-0">
+        {loading ? (
+          <Skeleton className="h-7 w-28" />
+        ) : (
+          <div className="truncate text-[21px] font-semibold leading-none tracking-[-0.03em] sm:text-[26px]">{value}</div>
+        )}
+        {delta && (
+          <div
+            className={cn(
+              "mt-2 text-xs font-medium",
+              deltaTone === "good" ? "text-good" : deltaTone === "bad" ? "text-bad" : "text-muted",
+            )}
+          >
+            {delta}
+          </div>
+        )}
       </div>
     </Card>
   );

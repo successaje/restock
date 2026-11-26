@@ -86,8 +86,8 @@ export function FundChart({ data, height = 240 }: { data: Point[]; height?: numb
 /** 12-ish point trend line for stat tiles. Decorative: the tile states the value. */
 export function Sparkline({ values, className }: { values: number[]; className?: string }) {
   if (values.length < 2) return null;
-  const w = 96;
-  const h = 28;
+  const w = 72;
+  const h = 24;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
