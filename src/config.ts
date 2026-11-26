@@ -52,6 +52,10 @@ const Env = z.object({
   ALTANA_WALLET: optional(addr),
   ALTANA_SESSION_KEY: optional(pk),
   ALTANA_SESSION_FILE: z.string().default("data/session.json"),
+  // The same description as one env var (raw JSON or base64), for hosts where
+  // copying a file is awkward. Wins over the file when set. Not a secret: the
+  // session's private key stays in ALTANA_SESSION_KEY.
+  ALTANA_SESSION_JSON: optional(z.string()),
 
   // Owner key for the Altana wallet. Only scripts/grant.ts and revoke.ts use it;
   // the agent process never needs it.

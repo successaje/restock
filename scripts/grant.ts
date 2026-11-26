@@ -45,16 +45,21 @@ const session = await client.grantSession({
 });
 if (session.status !== "granted") throw new Error(`Grant failed: ${JSON.stringify(session.legs)}`);
 
-saveSession(cfg.ALTANA_SESSION_FILE, {
+const stored = {
   ...serializeSession(session),
   keyId: session.keyId,
   keyHash: session.keyHash,
   grantTxHash: session.transactionHash ?? null,
   grantedAt: new Date().toISOString(),
-});
+};
+saveSession(cfg.ALTANA_SESSION_FILE, stored);
 console.log(`Granted.
   cap      $${cfg.SESSION_CAP_USDT} USD₮ (USD₮.transfer only)
   expires  ${expiryDate.toISOString()}
   tx       ${session.transactionHash ? `https://celoscan.io/tx/${session.transactionHash}` : "(no hash reported)"}
   key      ${altanaExplorer.key(session.keyId)}
-Saved to ${cfg.ALTANA_SESSION_FILE}.`);
+Saved to ${cfg.ALTANA_SESSION_FILE}.
+
+For a hosted agent, set these on the host instead of copying the file:
+  ALTANA_SESSION_KEY   (the session key from your .env)
+  ALTANA_SESSION_JSON=${Buffer.from(JSON.stringify(stored)).toString("base64")}`);

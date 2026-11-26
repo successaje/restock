@@ -45,8 +45,14 @@ export function loadStoredSession(path: string): StoredSession | null {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+/** The session description from ALTANA_SESSION_JSON: raw JSON, or base64 of it. */
+export function parseStoredSession(raw: string): StoredSession {
+  const text = raw.trim().startsWith("{") ? raw : Buffer.from(raw.trim(), "base64").toString("utf8");
+  return JSON.parse(text);
+}
+
 export function loadSession(cfg: Config): { stored: StoredSession; session: Session } | null {
-  const stored = loadStoredSession(cfg.ALTANA_SESSION_FILE);
+  const stored = cfg.ALTANA_SESSION_JSON ? parseStoredSession(cfg.ALTANA_SESSION_JSON) : loadStoredSession(cfg.ALTANA_SESSION_FILE);
   if (!stored || !cfg.ALTANA_SESSION_KEY) return null;
   return { stored, session: deserializeSession(stored, signerFromPrivateKey(cfg.ALTANA_SESSION_KEY)) };
 }

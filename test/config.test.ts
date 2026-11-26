@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { parseStoredSession } from "../src/altana.js";
 import { endOfQuarter, loadConfig } from "../src/config.js";
 import { Ledger } from "../src/ledger.js";
 import { readSettings, writeSettings } from "../src/settings.js";
@@ -19,6 +20,13 @@ test("live mode refuses to start without its keys", () => {
   assert.throws(() => loadConfig({ MODE: "sim", DASHBOARD_TOKEN: "short" }), /DASHBOARD_TOKEN: use at least 16/);
   assert.throws(() => loadConfig({ MODE: "sim", RESTOCK_BPS: "12000" }), /RESTOCK_BPS/);
   assert.equal(loadConfig({ MODE: "live" }, true).MODE, "live"); // setup scripts run before the keys exist
+});
+
+test("a hosted agent can take its session description from one env var", () => {
+  const stored = { keyId: "0x01", keyHash: "0x02", grantTxHash: null, grantedAt: "2026-11-26T00:00:00Z" };
+  const json = JSON.stringify(stored);
+  assert.deepEqual(parseStoredSession(json), stored);
+  assert.deepEqual(parseStoredSession(Buffer.from(json).toString("base64")), stored);
 });
 
 test("in live mode only the server's environment can change who gets paid", () => {
