@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+/* Dark mode is a class on <html>, set before first paint in index.html. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Restock design tokens.
+ * Base palette is Celo's (brand kit): Gypsum, Sand, Wood, Onyx, Prosperity
+ * Yellow, Forest. Dark mode is its own set of steps, not an inversion.
+ * Chart series colours are validated for colour-vision deficiency and contrast
+ * against each mode's surface (see docs/design.md).
+ */
+:root {
+  --bg: #fcf6f1; /* Gypsum */
+  --surface: #ffffff;
+  --surface-2: #f7f0e8;
+  --surface-3: #efe8dc;
+  --line: #e7e3d4; /* Sand */
+  --line-strong: #d5cfbb;
+  --ink: #0b0b0a; /* Onyx, softened a hair */
+  --ink-2: #39342b;
+  --muted: #655947; /* Wood */
+  --faint: #9a907e;
+
+  --brand: #fcff52; /* Prosperity Yellow */
+  --brand-ink: #0b0b0a;
+  --brand-soft: #fdffc2;
+  --forest: #476520;
+  --forest-soft: #e7eedb;
+
+  --good: #2b7a33; /* text-safe step of Celo Success #329F3B */
+  --good-soft: #e3f1e3;
+  --bad: #c8042b; /* text-safe step of Celo Error #E70532 */
+  --bad-soft: #fbe3e7;
+  --warn: #9a4d12;
+  --warn-soft: #fbeadb;
+
+  --chart-a: #476520; /* Restock / protected */
+  --chart-b: #8462da; /* kept in naira */
+  --chart-grid: #ece6d8;
+
+  --ring: #0b0b0a;
+  --overlay: rgb(11 11 10 / 0.42);
+  --shadow-color: 30 24 12;
+}
+
+.dark {
+  --bg: #0c0c0a;
+  --surface: #151513;
+  --surface-2: #1b1b18;
+  --surface-3: #23221e;
+  --line: #2a2924;
+  --line-strong: #3a3832;
+  --ink: #fcf6f1;
+  --ink-2: #e3dccf;
+  --muted: #a89f8c;
+  --faint: #6f675a;
+
+  --brand: #fcff52;
+  --brand-ink: #0b0b0a;
+  --brand-soft: #2c2d10;
+  --forest: #3aae5a;
+  --forest-soft: #15281a;
+
+  --good: #4cc26c;
+  --good-soft: #13281a;
+  --bad: #ff5a74;
+  --bad-soft: #33141a;
+  --warn: #f0a05a;
+  --warn-soft: #33220f;
+
+  --chart-a: #3aae5a;
+  --chart-b: #9b7cf0;
+  --chart-grid: #24231f;
+
+  --ring: #fcff52;
+  --overlay: rgb(0 0 0 / 0.6);
+  --shadow-color: 0 0 0;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-forest: var(--forest);
+  --color-forest-soft: var(--forest-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-chart-a: var(--chart-a);
+  --color-chart-b: var(--chart-b);
+  --color-chart-grid: var(--chart-grid);
+  --color-ring: var(--ring);
+  --color-overlay: var(--overlay);
+
+  /* Fixed brand colours (same in both modes) */
+  --color-celo-yellow: #fcff52;
+  --color-celo-forest: #476520;
+  --color-celo-fig: #1e002b;
+  --color-onyx: #0b0b0a;
+  --color-gypsum: #fcf6f1;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+
+  --shadow-xs: 0 1px 0 rgb(var(--shadow-color) / 0.04);
+  --shadow-card: 0 1px 0 rgb(var(--shadow-color) / 0.03), 0 1px 2px rgb(var(--shadow-color) / 0.04),
+    0 8px 24px -12px rgb(var(--shadow-color) / 0.08);
+  --shadow-pop: 0 2px 4px rgb(var(--shadow-color) / 0.04), 0 16px 48px -12px rgb(var(--shadow-color) / 0.22);
+  --shadow-glow: 0 0 0 1px rgb(252 255 82 / 0.5), 0 8px 32px -8px rgb(252 255 82 / 0.55);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-pulse-dot: pulse-dot 2s var(--ease-out-expo) infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-spin-slow: spin 18s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 55%, transparent); }
+    70% { box-shadow: 0 0 0 7px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::selection {
+    background: var(--color-celo-yellow);
+    color: var(--color-onyx);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button, [role="button"] { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+}
+
+@layer components {
+  /* Numbers that line up in columns; hero numbers keep proportional figures. */
+  .tnum { font-variant-numeric: tabular-nums; }
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 8px;
+  }
+  /* Film grain used sparingly on brand surfaces. */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .dark .grain::after { mix-blend-mode: screen; opacity: 0.04; }
+  .theme-switching *, .theme-switching *::before, .theme-switching *::after { transition: none !important; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

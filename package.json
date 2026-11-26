@@ -8,8 +8,10 @@
     "node": ">=22.13"
   },
   "scripts": {
+    "dev": "concurrently -k -n api,web -c yellow,green \"PORT=${API_PORT:-8787} tsx watch --clear-screen=false src/server.ts\" \"vite\"",
+    "dev:api": "tsx watch src/server.ts",
+    "build": "vite build",
     "start": "tsx src/server.ts",
-    "dev": "tsx watch src/server.ts",
     "agent": "tsx src/agent.ts",
     "status": "tsx scripts/status.ts",
     "rate": "tsx scripts/rate.ts",
@@ -19,7 +21,7 @@
     "revoke": "tsx scripts/revoke.ts",
     "agent:setup": "tsx scripts/agent-setup.ts",
     "agent:register": "tsx scripts/register-agent.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "test": "node --test --import tsx 'test/**/*.test.ts'"
   },
   "dependencies": {
