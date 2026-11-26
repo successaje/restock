@@ -96,6 +96,19 @@ export class SimRails implements Rails {
     return out;
   }
 
+  /**
+   * Demo control: pretend the naira has moved by `pct` percent against the
+   * dollar (positive = weaker naira), on top of the live Textile rate.
+   */
+  shock(pct: number) {
+    if (!Number.isFinite(pct) || pct < -50 || pct > 200) throw new Error("shock must be between -50% and 200%");
+    this.ledger.set("sim.shock", String(pct));
+  }
+
+  get shockPct(): number {
+    return Number(this.ledger.get("sim.shock") ?? 0);
+  }
+
   async quoteRate(sizeCngn: bigint) {
     try {
       const p = await this.textile.preview(CELO.CNGN, CELO.USDT, sizeCngn);
@@ -103,7 +116,7 @@ export class SimRails implements Rails {
     } catch {
       this.lastRate ??= FALLBACK_RATE;
     }
-    return this.lastRate;
+    return this.lastRate * (1 + this.shockPct / 100);
   }
 
   async convert(cngn: bigint): Promise<Conversion> {

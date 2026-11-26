@@ -2,6 +2,7 @@
 // for balances; this ledger remembers *why* each transaction happened (which
 // customer paid, which rule split it, which reorder spent it) so the installer
 // can see their book, not just a wallet balance.
+import { EventEmitter } from "node:events";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -111,6 +112,13 @@ CREATE TABLE IF NOT EXISTS events (
   message TEXT NOT NULL,
   tx_hash TEXT
 );
+CREATE TABLE IF NOT EXISTS snapshots (
+  id INTEGER PRIMARY KEY,
+  at TEXT NOT NULL,
+  ngn_per_usd REAL,
+  fund_usdt TEXT
+);
+CREATE INDEX IF NOT EXISTS snapshots_at ON snapshots(at);
 CREATE TABLE IF NOT EXISTS kv (
   k TEXT PRIMARY KEY,
   v TEXT NOT NULL
@@ -119,10 +127,15 @@ CREATE TABLE IF NOT EXISTS kv (
 
 const now = () => new Date().toISOString();
 
-export class Ledger {
+export type Snapshot = { at: string; ngnPerUsd: number | null; fundUsdt: string | null };
+
+/** Emits "change" whenever something the dashboard shows has changed. */
+export class Ledger extends EventEmitter {
   readonly db: DatabaseSync;
 
   constructor(path: string) {
+    super();
+    this.setMaxListeners(100);
     if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
     this.db = new DatabaseSync(path);
     this.db.exec("PRAGMA journal_mode = WAL;");
@@ -136,6 +149,27 @@ export class Ledger {
   }
   set(k: string, v: string) {
     this.db.prepare("INSERT INTO kv (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").run(k, v);
+  }
+
+  // ---- time series for charts: the naira rate and the fund balance
+  snapshot(s: { ngnPerUsd?: number | null; fundUsdt?: bigint | null }) {
+    this.db
+      .prepare("INSERT INTO snapshots (at, ngn_per_usd, fund_usdt) VALUES (?, ?, ?)")
+      .run(now(), s.ngnPerUsd ?? null, s.fundUsdt != null ? s.fundUsdt.toString() : null);
+  }
+  lastSnapshotAt(kind: "rate" | "fund"): number {
+    const col = kind === "rate" ? "ngn_per_usd" : "fund_usdt";
+    const row = this.db.prepare(`SELECT at FROM snapshots WHERE ${col} IS NOT NULL ORDER BY id DESC LIMIT 1`).get() as
+      | { at: string }
+      | undefined;
+    return row ? Date.parse(row.at) : 0;
+  }
+  snapshots(sinceIso: string): Snapshot[] {
+    return (this.db.prepare("SELECT * FROM snapshots WHERE at >= ? ORDER BY id").all(sinceIso) as any[]).map((r) => ({
+      at: r.at,
+      ngnPerUsd: r.ngn_per_usd,
+      fundUsdt: r.fund_usdt,
+    }));
   }
 
   // ---- customers
@@ -243,9 +277,11 @@ export class Ledger {
 
   // ---- activity feed
   log(kind: AgentEvent["kind"], message: string, txHash: string | null = null) {
-    this.db.prepare("INSERT INTO events (at, kind, message, tx_hash) VALUES (?, ?, ?, ?)").run(now(), kind, message, txHash);
+    const at = now();
+    const r = this.db.prepare("INSERT INTO events (at, kind, message, tx_hash) VALUES (?, ?, ?, ?)").run(at, kind, message, txHash);
     const tag = txHash ? ` ${txHash}` : "";
     console.log(`[${kind}] ${message}${tag}`);
+    this.emit("change", { id: Number(r.lastInsertRowid), at, kind, message, txHash } satisfies AgentEvent);
   }
   events(limit = 50): AgentEvent[] {
     return (this.db.prepare("SELECT * FROM events ORDER BY id DESC LIMIT ?").all(limit) as any[]).map((r) => ({
