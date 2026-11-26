@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; }
+  html, body { background: #FCF6F1; overflow: hidden; }
+  #tile { position: absolute; left: 0; top: 0; background: #FCFF52; }
+  /* Full-bleed square: platforms apply their own corner mask. The glyph sits
+     inside the central 72% so it survives maskable-icon cropping. */
+  #tile svg { position: absolute; }
+</style>
+</head>
+<body>
+  <div id="tile">
+    <svg viewBox="4 4 24 24">
+      <g transform="translate(4.4 4.4) scale(0.967)" fill="none" stroke="#0B0B0A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+        <path d="M21 3v5h-5" />
+      </g>
+      <circle cx="16" cy="16" r="3.3" fill="#0B0B0A" />
+    </svg>
+  </div>
+  <script>
+    // Headless Chrome has a minimum window width, so size in exact pixels.
+    const n = Number(new URLSearchParams(location.search).get("size") || 512);
+    const tile = document.getElementById("tile");
+    tile.style.width = tile.style.height = n + "px";
+    const svg = tile.querySelector("svg");
+    const g = Math.round(n * 0.72);
+    Object.assign(svg.style, { width: g + "px", height: g + "px", left: Math.round((n - g) / 2) + "px", top: Math.round((n - g) / 2) + "px" });
+  </script>
+</body>
+</html>

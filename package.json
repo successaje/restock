@@ -11,6 +11,7 @@
     "dev": "concurrently -k -n api,web -c yellow,green \"PORT=${API_PORT:-8787} tsx watch --clear-screen=false src/server.ts\" \"vite\"",
     "dev:api": "tsx watch src/server.ts",
     "build": "vite build",
+    "brand": "tsx scripts/brand/render.ts",
     "start": "tsx src/server.ts",
     "agent": "tsx src/agent.ts",
     "status": "tsx scripts/status.ts",

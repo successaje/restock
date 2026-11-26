@@ -1,0 +1,15 @@
+{
+  "name": "Restock",
+  "short_name": "Restock",
+  "description": "Protects solar installers' naira installment income from devaluation. Built on Celo.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FCF6F1",
+  "theme_color": "#FCF6F1",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
